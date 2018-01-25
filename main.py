@@ -10,17 +10,17 @@ one_char_token = [
 ]
 
 prog = ""
-while True:
-    s = input()
-    if s == "@":
-        break
-    prog += s + '\n'
-prog += "$"
-
-print("inja")
-print(prog)
-
 current_index = 0
+
+
+def get_program():
+    global prog
+    while True:
+        s = input()
+        if s.find("EOF") != -1:
+            break
+        prog += s + '\n'
+    prog += "$"
 
 
 def search(state, start_index):
@@ -54,6 +54,7 @@ def search(state, start_index):
         elif current_char == "&":
             return search(13, start_index)
         else:
+            print("inja error", current_char, current_index)
             return ["error", start_index]
 
     elif state == 1:
@@ -70,7 +71,7 @@ def search(state, start_index):
             return search(3, start_index)
         else:
             current_index -= 1
-            return ["integer"]
+            return ["integer", "integer"]
 
     elif state == 5:
         if current_char.isdigit():
@@ -108,12 +109,12 @@ def next_token():
     if current_index >= len(prog):
         return [-1, -1] # End of program
 
-    while prog[current_index] == ' ' or prog[current_index] == '\t' or prog[current_index] == '\n':
+    while prog[current_index].isspace():
         current_index += 1
 
     start_index = current_index
     while search(0, start_index)[0] == "error":
-        print("Error in index ", start_index)
+        print("Error in index ", start_index, prog[start_index], ord(' '), " ",  ord(prog[start_index]), " ", prog[start_index].isspace())
         start_index += 1
         current_index = start_index
     current_index = start_index
@@ -121,5 +122,3 @@ def next_token():
     token = search(0, start_index)
     return token
 
-for i in range(100):
-    print(next_token())
