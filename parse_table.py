@@ -1,3 +1,70 @@
+grammer = [
+    ("",""),
+    ("Goal", "Source EOF"), # 1
+    ("Source", "ClassDeclarations MainClass"), # 2
+    ("MainClass", "public class Identifier { public static void main ( ) { VarDeclarations Statements } }"), # 3
+    ("ClassDeclarations", "ClassDeclaration ClassDeclarations"), # 4
+    ("ClassDeclaration", "class Identifier Extension { FieldDeclarations MethodDeclarations }"), # 5
+    ("Extension", "extends Identifier"), # 6
+    ("Extension", ""), # 7
+    ("FieldDeclarations", ""), # 8
+    ("FieldDeclarations", "FieldDeclaration FieldDeclarations"), # 9
+    ("FieldDeclaration", "static Type Identifier ;"), # 10
+    ("VarDeclarations", "VarDeclaration VarDeclarations"), # 11
+    ("VarDeclarations", ""), # 12
+    ("VarDeclaration", "Type Identifier ;"), # 13
+    ("MethodDeclarations", "MethodDeclaration MethodDeclarations"), # 14
+    ("MethodDeclarations", ""), # 15
+    ("MethodDeclaration", "public static Type Identifier ( Parameters ) { VarDeclarations Statements return GenExpression ; }"), # 16
+    ("Parameters", "Type Identifier Parameter"), # 17
+    ("Parameters", ""), # 18
+    ("Parameter", ", Type Identifier Parameter"), # 19
+    ("Parameter", ""), # 20
+    ("Type", "boolean"), # 21
+    ("Type", "int"), # 22
+    ("Statements", "A"), # 23
+    ("A", "Statement A"), # 24
+    ("A",""), # 25
+    ("Statement","{ Statements }"), # 26
+    ("Statement","if ( GenExpression ) Statement else Statement"), # 27
+    ("Statement","while ( GenExpression ) Statement"), # 28
+    ("Statement","for ( Identifier = Integer ; RelTerm ; Identifier += Integer ) Statement"), # 29
+    ("Statement","Identifier = GenExpression ;"), # 30
+    ("Statement","System.out.println ( GenExpression ) ;"), # 31
+    ("GenExpression","Expression I"), # 32
+    ("I",""), # 33
+    ("I","G H"), # 34
+    ("Expression","Term C"), # 35
+    ("C","B C"), # 36
+    ("C",""), # 37
+    ("B","+ Term"), # 38
+    ("B","- Term"), # 39
+    ("Term","Factor D"), # 40
+    ("D","* Factor D"), # 41
+    ("D",""), # 42
+    ("Factor","( Expression )"), # 43
+    ("Factor","true"), # 44
+    ("Factor","false"), # 45
+    ("Factor","Integer"), # 46
+    ("Factor","Identifier E"), # 47
+    ("E",""), # 48
+    ("E",". Identifier F"), # 49
+    ("F",""), # 50
+    ("F","( Arguments )"), # 51
+    ("RelExpression","RelTerm H"), # 52
+    ("H","&& RelTerm H"), # 53
+    ("H",""), # 54
+    ("RelTerm","Expression G"), # 55
+    ("G","== Expression"), # 56
+    ("G","< Expression"), # 57
+    ("Arguments","GenExpression Argument"), # 58
+    ("Arguments",""), # 59
+    ("Argument",""), # 60
+    ("Argument",", GenExpression Argument"), # 61
+    ("Identifier","identifier"), # 62
+    ("Integer","integer"), # 63
+    ("ClassDeclarations", ""), # 64
+]
 
 parse_table = {
     "VarDeclarations": {
@@ -226,99 +293,6 @@ parse_table = {
     },
 }
 
-grammer = [
-    ("",""),
-    ("Goal", "Source EOF"), # 1
-    ("Source", "ClassDeclarations MainClass"), # 2
-    ("MainClass", "public class Identifier { public static void main ( ) { VarDeclarations Statements } }"), # 3
-    ("ClassDeclarations", "ClassDeclaration ClassDeclarations"), # 4
-    ("ClassDeclaration", "class Identifier Extension { FieldDeclarations MethodDeclarations }"), # 5
-    ("Extension", "extends Identifier"), # 6
-    ("Extension", ""), # 7
-    ("FieldDeclarations", ""), # 8
-    ("FieldDeclarations", "FieldDeclaration FieldDeclarations"), # 9
-    ("FieldDeclaration", "static Type Identifier ;"), # 10
-    ("VarDeclarations", "VarDeclaration VarDeclarations"), # 11
-    ("VarDeclarations", ""), # 12
-    ("VarDeclaration", "Type Identifier ;"), # 13
-    ("MethodDeclarations", "MethodDeclaration MethodDeclarations"), # 14
-    ("MethodDeclarations", ""), # 15
-    ("MethodDeclaration", "public static Type Identifier ( Parameters ) { VarDeclarations Statements return GenExpression ; }"), # 16
-    ("Parameters", "Type Identifier Parameter"), # 17
-    ("Parameters", ""), # 18
-    ("Parameter", ", Type Identifier Parameter"), # 19
-    ("Parameter", ""), # 20
-    ("Type", "boolean"), # 21
-    ("Type", "int"), # 22
-    ("Statements", "A"), # 23
-    ("A", "Statement A"), # 24
-    ("A",""), # 25
-    ("Statement","{ Statements }"), # 26
-    ("Statement","if ( GenExpression ) Statement else Statement"), # 27
-    ("Statement","while ( GenExpression ) Statement"), # 28
-    ("Statement","for ( Identifier = Integer ; RelTerm ; Identifier += Integer ) Statement"), # 29
-    ("Statement","Identifier = GenExpression ;"), # 30
-    ("Statement","System.out.println ( GenExpression ) ;"), # 31
-    ("GenExpression","Expression I"), # 32
-    ("I",""), # 33
-    ("I","G H"), # 34
-    ("Expression","Term C"), # 35
-    ("C","B C"), # 36
-    ("C",""), # 37
-    ("B","+ Term"), # 38
-    ("B","- Term"), # 39
-    ("Term","Factor D"), # 40
-    ("D","* Factor D"), # 41
-    ("D",""), # 42
-    ("Factor","( Expression )"), # 43
-    ("Factor","true"), # 44
-    ("Factor","false"), # 45
-    ("Factor","Integer"), # 46
-    ("Factor","Identifier E"), # 47
-    ("E",""), # 48
-    ("E",". Identifier F"), # 49
-    ("F",""), # 50
-    ("F","( Arguments )"), # 51
-    ("RelExpression","RelTerm H"), # 52
-    ("H","&& RelTerm H"), # 53
-    ("H",""), # 54
-    ("RelTerm","Expression G"), # 55
-    ("G","== Expression"), # 56
-    ("G","< Expression"), # 57
-    ("Arguments","GenExpression Argument"), # 58
-    ("Arguments",""), # 59
-    ("Argument",""), # 60
-    ("Argument",", GenExpression Argument"), # 61
-    ("Identifier","identifier"), # 62
-    ("Integer","integer"), # 63
-    ("ClassDeclarations", ""), # 64
-]
-
-# map_terminals = {
-#     "^": "==",
-#     "&": "&&",
-#     "%": "+=",
-#     "a": "false",
-#     "b": "boolean",
-#     "c": "class",
-#     "d": "identifier",
-#     "e": "EOF",
-#     "f": "if",
-#     "i": "int",
-#     "l": "else",
-#     "m": "main",
-#     "n": "integer",
-#     "o": "for",
-#     "p": "public",
-#     "r": "return",
-#     "s": "static",
-#     "t": "true",
-#     "v": "void",
-#     "w": "while",
-#     "x": "extends",
-#     "y": "System.out.println",
-# }
-
 map_terminals = {
     "==": "^",
     "&&": "&",
@@ -354,6 +328,45 @@ map_terminals = {
     "<": "<",
     ")": ")",
     "=": "=",
+}
+
+follows = {
+    "VarDeclarations": ["r", "d", "f", "w", "y", "{", "}", "o"],
+    "Statements": ["r", "}"],
+    "MethodDeclarations": ["}"],
+    "Type": ["d"],
+    "Parameters": [")"],
+    "GenExpression": [")", ";", ","],
+    "Parameter": [")"],
+    "A": ["r", "}"],
+    "Statement": ["r", "d", "f", "w", "y", "{", "l", "}", "o"],
+    "RelTerm": ["&", ")", ";", ","],
+    "Expression": ["&", ")", ";", "<", ",", "^"],
+    "I": [")", ";", ","],
+    "G": ["&", ")", ";", ","],
+    "H": [")", ";", ","],
+    "Term": ["&", ")", ";", "+", "<", ",", "-", "^"],
+    "B": ["&", ")", ";", "+", "<", ",", "-", "^"],
+    "C": ["&", ")", ";", "<", ",", "^"],
+    "D": ["&", ")", ";", "+", "<", ",", "-", "^"],
+    "Factor": ["&", ")", ";", "+", "<", ",", "-", "^", "*"],
+    "Arguments": [")"],
+    "Argument": [")"],
+    "E": ["&", ")", ";", "+", "<", ",", "-", "^", "*"],
+    "F": ["&", ")", ";", "+", "<", ",", "-", "^", "*"],
+    "Identifier": ["%", "&", "(", ")", "*", "+", ",", "-", ".", "x", "{", ";", "<", "=", "^"],
+    "Integer": ["&", ")", ";", "+", "<", ",", "-", "^", "*"],
+    "RelExpression": [],
+    "FieldDeclaration": ["p", "s", "}"],
+    "Goal": ["$"],
+    "MethodDeclaration": ["p", "}"],
+    "ClassDeclarations": ["p"],
+    "MainClass": ["e"],
+    "Source": ["e"],
+    "FieldDeclarations": ["p", "}"],
+    "ClassDeclaration": ["p", "c"],
+    "VarDeclaration": ["b", "r", "d", "f", "w", "y", "i", "{", "}", "o"],
+    "Extension": ["{"],
 }
 
 terminals = list(map_terminals.keys())

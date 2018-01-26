@@ -120,5 +120,5 @@ def next_token():
     current_index = start_index
 
     token = search(0, start_index)
-    return token
+    return (token, start_index)
 
