@@ -9,8 +9,23 @@ one_char_token = [
     "{", "}", "(", ")", ";", ",", ".", "$"
 ]
 
+symbol_tables = {
+    "package": [],
+}
+
+extend_relation = {}
+
+table_stack = ["package"]
+
+extend_stack = []
+
+scope_stack = [0]
+
 prog = ""
+
 current_index = 0
+
+var_declaration = False
 
 
 def get_program():
@@ -21,6 +36,13 @@ def get_program():
             break
         prog += s + '\n'
     prog += "$"
+
+
+def exist(arr, s, e, l):
+    for i in range(s, e):
+        if arr[i]["name"] == l:
+            return i
+    return -1
 
 
 def search(state, start_index):
@@ -40,6 +62,9 @@ def search(state, start_index):
         if current_char == "$":
             return ["$", "$"]
         if current_char in one_char_token:
+            if current_char == "{" and table_stack[-1] == "package":
+                table_stack.append(extend_stack[-1])
+                extend_stack.pop()
             return [current_char, current_char]
         if current_char.isalpha():
             return search(1, start_index)
@@ -54,7 +79,6 @@ def search(state, start_index):
         elif current_char == "&":
             return search(13, start_index)
         else:
-            print("inja error", current_char, current_index)
             return ["error", start_index]
 
     elif state == 1:
@@ -62,16 +86,61 @@ def search(state, start_index):
             return search(1, start_index)
         else:
             current_index -= 1
-            if prog[start_index: current_index] in keywords:
-                return ["keywords", prog[start_index: current_index]]
-            return ["identifier", -1] # symbol table
+            lexeme = prog[start_index: current_index]
+            if lexeme in keywords:
+                return ["keywords", lexeme]
+
+            head_table = table_stack[-1]
+            if head_table == "package":
+                # redefinition error TODO
+                if len(extend_stack) == 0:
+                    symbol_tables[lexeme] = []
+                    extend_stack.append(lexeme)
+                else:
+                    extend_relation[extend_stack[-1]] = lexeme
+                return ["identifier", -1, -1]
+            elif var_declaration:
+                st = scope_stack[-1]
+                en = len(symbol_tables[table_stack[-1]])
+                index = exist(symbol_tables[table_stack[-1]], st, en, lexeme)
+                if index != -1:
+                    print("Redefinition Error ", lexeme, " ", symbol_tables[table_stack[-1]])
+                    return ["identifier", index, table_stack[-1]]
+                else:
+                    symbol_tables[table_stack[-1]].append({"name": lexeme})
+                    return ["identifier", len(symbol_tables[table_stack[-1]]) - 1, table_stack[-1]]
+            elif lexeme in symbol_tables:
+                table_stack.append(lexeme)
+                return ["identifier", -1, -1]
+            else:
+                st = scope_stack[-1]
+                en = len(symbol_tables[table_stack[-1]])
+                ind0 = exist(symbol_tables[table_stack[-1]], st, en, lexeme)
+                if ind0 != -1:
+                    return ["identifier", ind0, table_stack[-1]]
+                en = st
+                st = scope_stack[0]
+                ind1 = exist(symbol_tables[table_stack[-1]], st, en, lexeme)
+                if ind1 != -1:
+                    return ["identifier", ind1, table_stack[-1]]
+                current_table = table_stack[-1]
+                while current_table in extend_relation:
+                    # print(current_table, " inja \n", extend_relation)
+                    current_table = extend_relation[current_table]
+                    ind = exist(symbol_tables[current_table], 0, len(symbol_tables[current_table]), lexeme)
+                    if ind != -1:
+                        return ["identifier", ind, current_table]
+                print("Error using variable without definition")
+                symbol_tables[table_stack[-1]].append({"name": lexeme})
+                return ["identifier", len(symbol_tables[table_stack[-1]]) - 1, table_stack[-1]]
 
     elif state == 3:
         if current_char.isdigit():
             return search(3, start_index)
         else:
             current_index -= 1
-            return ["integer", "integer"]
+            lexeme = prog[start_index: current_index]
+            return ["integer", lexeme]
 
     elif state == 5:
         if current_char.isdigit():
@@ -103,8 +172,9 @@ def search(state, start_index):
             return ["error", start_index]
 
 
-def next_token():
-    global current_index
+def next_token(isdeclaration):
+    global current_index, var_declaration
+    var_declaration = isdeclaration
 
     if current_index >= len(prog):
         return [-1, -1] # End of program
@@ -113,11 +183,12 @@ def next_token():
         current_index += 1
 
     start_index = current_index
-    while search(0, start_index)[0] == "error":
-        print("Error in index ", start_index, prog[start_index], ord(' '), " ",  ord(prog[start_index]), " ", prog[start_index].isspace())
-        start_index += 1
-        current_index = start_index
-    current_index = start_index
+
+    # while search(0, start_index)[0] == "error":
+    #     print("Error in index ", start_index, prog[start_index], ord(' '), " ",  ord(prog[start_index]), " ", prog[start_index].isspace())
+    #     start_index += 1
+    #     current_index = start_index
+    # current_index = start_index
 
     token = search(0, start_index)
     return (token, start_index)

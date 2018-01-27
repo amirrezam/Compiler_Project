@@ -1,21 +1,249 @@
 # LL1 parser
 
 from parse_table import parse_table, grammer, map_terminals, terminals, follows
-from main import next_token, keywords, get_program, current_index
+from main import next_token, keywords, get_program, current_index, symbol_tables, table_stack, scope_stack
+
+var_declaration = False
 
 get_program()
 parse_stack = []
 parse_stack.append("Goal")
 
 start_index = 0
+prog_ind = 0
+
+return_value_counter = 2000
+return_address_counter = 3000
+var_counter = 1000
+temp_counter = 4000
+
+complete_token = []
+
+semantic_stack = []
+
+PB = [""]
+
+
+def get_temp():
+    global temp_counter
+    temp_counter += 4
+    return temp_counter - 4
+
+
+def pop_stack(k):
+    while len(symbol_tables[table_stack[-1]]) > k:
+        symbol_tables[table_stack[-1]].pop()
+
+
+def jp(L):
+    return "(JP, {}, , )".format(L)
+
+
+def assign(S, D):
+    return "(ASSIGN, {}, {}, )".format(S, D)
+
+
+def add(S1, S2, D):
+    return "(ADD, {}, {}, {})".format(S1, S2, D)
+
+
+def mult(S1, S2, D):
+    return "(MULT, {}, {}, {})".format(S1, S2, D)
+
+
+def sub(S1, S2, D):
+    return "(SUB, {}, {}, {})".format(S1, S2, D)
+
+
+def equality(S1, S2, D):
+    return "(EQ, {}, {}, {})".format(S1, S2, D)
+
+
+def less(S1, S2, D):
+    return "(LT, {}, {}, {})".format(S1, S2, D)
+
+
+def jpf(S, D):
+    return "(JPF, {}, {}, )".format(S, D)
+
+
+def print_assemble(S):
+    return "(PRINT, {}, , )".format(S)
+
+
+def handle_action(action):
+    global return_value_counter, var_counter, semantic_stack, return_address_counter, var_declaration
+    if action == "POP_SYMBOL_TABLE":
+        table_stack.pop()
+    elif action == "START_SCOPE":
+        scope_stack.append(len(symbol_tables[table_stack[-1]]))
+    elif action == "END_SCOPE":
+        pop_stack(scope_stack[-1])
+        scope_stack.pop()
+    elif action == "SET_DECLARATION":
+        var_declaration = True
+    elif action == "RESET_DECLARATION":
+        var_declaration = False
+    elif action == "PUSH_INT":
+        semantic_stack.append("#{}".format(complete_token[1]))  #(complete_token[1], "int")
+    elif action == "PUSH_BOOL":
+        semantic_stack.append(complete_token[1])  #(complete_token[1], "bool")
+    elif action == "DEFINE_FUNC":
+        ind = complete_token[1]
+        semantic_stack.append(ind)
+        symbol_tables[table_stack[-1]][ind]["return_address"] = return_address_counter
+        return_address_counter += 4
+        symbol_tables[table_stack[-1]][ind]["return_value"] = return_value_counter
+        return_value_counter += 4
+        symbol_tables[table_stack[-1]][ind]["prog_start"] = prog_ind
+        symbol_tables[table_stack[-1]][ind]["param_start"] = var_counter
+    elif action == "END_FUNC":
+        ind = semantic_stack[-1]
+        symbol_tables[table_stack[-1]][ind]["param_end"] = var_counter
+    elif action == "ID_ADDRESS":
+        ind = complete_token[1]
+        symbol_tables[table_stack[-1]][ind]["address"] = var_counter
+        var_counter += 4
+    elif action == "JMP_RETURN":
+        ind = semantic_stack[-2]
+        val = semantic_stack[-1]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(assign(val, symbol_tables[table_stack[-1]][ind]["return_value"]))
+        PB.append(jp("@{}".format(symbol_tables[table_stack[-1]][ind]["return_address"])))
+    elif action == "JMP_FIRST":
+        PB[0] = jp("{}".format(len(PB)))
+    elif action == "ADD":
+        t = get_temp()
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        PB.append(add(a, b, t))
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.append(t)
+    elif action == "MULT":
+        t = get_temp()
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        PB.append(mult(a, b, t))
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.append(t)
+    elif action == "SUB":
+        t = get_temp()
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        PB.append(sub(b, a, t))
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.append(t)
+    elif action == "PID_CLASS":
+        t = complete_token
+        ind = t[1]
+        if ind != -1:
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+    elif action == "PID_METHOD":
+        t = complete_token
+        ind = t[1]
+        if "address" in symbol_tables[table_stack[-1]][ind]:
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+        else:
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_value"])
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["prog_start"])
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_address"])
+
+    elif action == "JMP_RETURN_ADDRESS":
+        l = len(PB)
+        R_A = semantic_stack[-1]
+        P_S = semantic_stack[-2]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(assign("{}".format(l + 2), R_A))
+        PB.append(jp(P_S))
+
+    elif action == "EQUALITY":
+        t = get_temp()
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(equality(a, b, t))
+        semantic_stack.append(t)
+
+    elif action == "LESS_THAN":
+        t = get_temp()
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(less(b, a, t))
+        semantic_stack.append(t)
+
+    elif action == "LABEL":
+        semantic_stack.append(len(PB))
+
+    elif action == "SAVE":
+        semantic_stack.append(len(PB))
+        PB.append("")
+
+    elif action == "WHILE":
+        ind = semantic_stack[-1]
+        exp = semantic_stack[-2]
+        st = semantic_stack[-3]
+        l = len(PB)
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB[ind] = jpf(exp, l + 1)
+        PB.append(jp(st))
+
+    elif action == "JPF_SAVE":
+        ind = semantic_stack[-1]
+        exp = semantic_stack[-2]
+        l = len(PB)
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB[ind] = jpf(exp, l + 1)
+        semantic_stack.append(l)
+        PB.append("")
+
+    elif action == "JP":
+        l = len(PB)
+        ind = semantic_stack[-1]
+        semantic_stack.pop()
+        PB[ind] = jp(l)
+
+    elif action == "PID":
+        t = complete_token
+        ind = t[1]
+        semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+
+    elif action == "ASSIGN":
+        s = semantic_stack[-1]
+        d = semantic_stack[-2]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(assign(s, d))
+
+    elif action == "PRINT":
+        exp = semantic_stack[-1]
+        semantic_stack.pop()
+        PB.append(print_assemble(exp))
+    # else:
+    #     print("ERROR IN ACTION")
+
+
 
 
 def get_token():
     global start_index
-    t = next_token()
+    global complete_token
+    t = next_token(var_declaration)
+    print(t, " token \n\n", "symbol_table: ", symbol_tables, "\n\n", "table_stack: ", table_stack, "\n\n", "scope_stack:", scope_stack, "\n\n")
     start_index = t[1]
     n_token = t[0]
-    if n_token[0] == "identifier":
+    complete_token = n_token
+    if n_token[0] == "identifier" or n_token[0] == "integer":
         token = n_token[0]
     else:
         token = n_token[1]
@@ -32,8 +260,14 @@ while True:
         print("BE FANA")
         # TODO
     top = parse_stack[-1]
-    # print("\n\n\n token : ", token, "\t\t top: ", top)
-    # print(parse_stack, " PARSE STACK")
+
+    print("\n\n\n token : ", token, "\t\t top: ", top)
+    print(parse_stack, " PARSE STACK")
+
+    if top.find("#") != -1:
+        handle_action(top[1:])
+        parse_stack.pop()
+        continue
     if top in terminals:
         if top == token:
             if token == "EOF":
