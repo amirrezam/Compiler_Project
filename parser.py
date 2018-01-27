@@ -10,7 +10,6 @@ parse_stack = []
 parse_stack.append("Goal")
 
 start_index = 0
-prog_ind = 0
 
 return_value_counter = 2000
 return_address_counter = 3000
@@ -95,7 +94,7 @@ def handle_action(action):
         return_address_counter += 4
         symbol_tables[table_stack[-1]][ind]["return_value"] = return_value_counter
         return_value_counter += 4
-        symbol_tables[table_stack[-1]][ind]["prog_start"] = prog_ind
+        symbol_tables[table_stack[-1]][ind]["prog_start"] = len(PB)
         symbol_tables[table_stack[-1]][ind]["param_start"] = var_counter
     elif action == "END_FUNC":
         ind = semantic_stack[-1]
@@ -151,6 +150,8 @@ def handle_action(action):
             semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_value"])
             semantic_stack.append(symbol_tables[table_stack[-1]][ind]["prog_start"])
             semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_address"])
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["param_end"])
+            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["param_start"])
 
     elif action == "JMP_RETURN_ADDRESS":
         l = len(PB)
@@ -229,10 +230,39 @@ def handle_action(action):
         exp = semantic_stack[-1]
         semantic_stack.pop()
         PB.append(print_assemble(exp))
-    # else:
-    #     print("ERROR IN ACTION")
 
+    elif action == "FOR":
+        a = semantic_stack[-1]
+        b = semantic_stack[-2]
+        ind = semantic_stack[-3]
+        label = semantic_stack[-5]
+        exp = semantic_stack[-4]
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(add(a, b, b))
+        PB.append(jp(label))
+        l = len(PB)
+        PB[ind] = jpf(exp, l)
 
+    elif action == "POP_PARAMS":
+        semantic_stack.pop()
+        semantic_stack.pop()
+
+    elif action == "ASSIGN_ARG":
+        exp = semantic_stack[-1]
+        current_param = semantic_stack[-2]
+        param_end = semantic_stack[-3]
+        if current_param == param_end:
+            print("Error in call function, arguments more than parameters")
+        else:
+            PB.append(assign(exp, current_param))
+            semantic_stack[-2] = current_param + 4
+            semantic_stack.pop()
+    else:
+        print("ERROR IN ACTION TYPE")
 
 
 def get_token():
@@ -263,6 +293,7 @@ while True:
 
     print("\n\n\n token : ", token, "\t\t top: ", top)
     print(parse_stack, " PARSE STACK")
+    print(PB)
 
     if top.find("#") != -1:
         handle_action(top[1:])
@@ -296,3 +327,5 @@ while True:
                 else:
                     token = get_token()
 
+for i in range(len(PB)):
+    print("{}: ".format(i), PB[i])

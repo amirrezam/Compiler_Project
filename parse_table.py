@@ -28,7 +28,7 @@ grammer = [
     ("Statement","{ Statements }"), # 26
     ("Statement","if ( GenExpression ) #SAVE Statement else #JPF_SAVE Statement #JP"), # 27
     ("Statement","while #LABEL ( GenExpression ) #SAVE Statement #WHILE"), # 28
-    ("Statement","for ( Identifier = Integer ; RelTerm ; Identifier += Integer ) Statement"), # 29
+    ("Statement","for ( #PID Identifier = Integer #ASSIGN ; #LABEL RelTerm #SAVE ; #PID Identifier += Integer ) Statement #FOR"), # 29
     ("Statement","#PID Identifier = GenExpression #ASSIGN ;"), # 30
     ("Statement","System.out.println ( GenExpression #PRINT ) ;"), # 31
     ("GenExpression","Expression I"), # 32
@@ -57,10 +57,10 @@ grammer = [
     ("RelTerm","Expression G"), # 55
     ("G","== Expression #EQUALITY"), # 56
     ("G","< Expression #LESS_THAN"), # 57
-    ("Arguments","GenExpression Argument"), # 58
-    ("Arguments",""), # 59
-    ("Argument",""), # 60
-    ("Argument",", GenExpression Argument"), # 61
+    ("Arguments","GenExpression #ASSIGN_ARG Argument"), # 58
+    ("Arguments","#POP_PARAMS"), # 59
+    ("Argument","#POP_PARAMS"), # 60
+    ("Argument",", GenExpression #ASSIGN_ARG Argument"), # 61
     ("Identifier","identifier"), # 62
     ("Integer","#PUSH_INT integer"), # 63
     ("ClassDeclarations", ""), # 64
