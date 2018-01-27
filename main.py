@@ -3,7 +3,7 @@ import sys
 
 keywords = [
     "public", "class", "static", "void", "main", "extends", "return",
-    "if", "else", "while", "for", "true", "false", "boolean", "int"
+    "if", "else", "while", "for", "true", "false", "boolean", "int", "EOF"
 ]
 
 one_char_token = [
@@ -33,12 +33,10 @@ number_of_lines = 1
 
 def get_program():
     global prog
-    while True:
-        s = input()
-        if s.find("EOF") != -1:
-            break
-        prog += s + '\n'
-    prog += "$"
+    # file_name = input()
+    with open('sample.txt', 'r') as myfile:
+        prog = myfile.read()
+    prog += "\n"
 
 
 def exist(arr, s, e, l):

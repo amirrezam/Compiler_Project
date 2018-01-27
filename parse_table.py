@@ -9,16 +9,16 @@ grammer = [
     ("Extension", ""), # 7
     ("FieldDeclarations", ""), # 8
     ("FieldDeclarations", "FieldDeclaration FieldDeclarations"), # 9
-    ("FieldDeclaration", "#SET_DECLARATION static Type #ID_ADDRESS Identifier #RESET_DECLARATION ;"), # 10
+    ("FieldDeclaration", "#SET_DECLARATION static #ADD_TYPE Type #ID_ADDRESS Identifier #RESET_DECLARATION ;"), # 10
     ("VarDeclarations", "VarDeclaration VarDeclarations"), # 11
     ("VarDeclarations", ""), # 12
-    ("VarDeclaration", "#SET_DECLARATION Type #ID_ADDRESS Identifier #RESET_DECLARATION ;"), # 13
+    ("VarDeclaration", "#SET_DECLARATION #ADD_TYPE Type #ID_ADDRESS Identifier #RESET_DECLARATION ;"), # 13
     ("MethodDeclarations", "MethodDeclaration MethodDeclarations"), # 14
     ("MethodDeclarations", ""), # 15
-    ("MethodDeclaration", "#SET_DECLARATION public static Type #DEFINE_FUNC Identifier #RESET_DECLARATION #START_SCOPE ( Parameters ) #END_FUNC { VarDeclarations Statements return GenExpression ; #END_SCOPE #JMP_RETURN }"), # 16
-    ("Parameters", "#SET_DECLARATION Type #ID_ADDRESS Identifier #RESET_DECLARATION Parameter"), # 17
+    ("MethodDeclaration", "#SET_DECLARATION public static #ADD_TYPE Type #DEFINE_FUNC Identifier #RESET_DECLARATION #START_SCOPE ( Parameters ) #END_FUNC { VarDeclarations Statements return GenExpression ; #END_SCOPE #JMP_RETURN }"), # 16
+    ("Parameters", "#SET_DECLARATION #ADD_TYPE Type #ID_ADDRESS Identifier #RESET_DECLARATION Parameter"), # 17
     ("Parameters", ""), # 18
-    ("Parameter", "#SET_DECLARATION , Type #ID_ADDRESS Identifier #RESET_DECLARATION Parameter"), # 19
+    ("Parameter", "#SET_DECLARATION , #ADD_TYPE Type #ID_ADDRESS Identifier #RESET_DECLARATION Parameter"), # 19
     ("Parameter", ""), # 20
     ("Type", "boolean"), # 21
     ("Type", "int"), # 22
@@ -52,7 +52,7 @@ grammer = [
     ("F",""), # 50
     ("F","( Arguments ) #JMP_RETURN_ADDRESS"), # 51
     ("RelExpression","RelTerm H"), # 52
-    ("H","&& RelTerm H"), # 53
+    ("H","&& RelTerm #AND_TERM H"), # 53
     ("H",""), # 54
     ("RelTerm","Expression G"), # 55
     ("G","== Expression #EQUALITY"), # 56

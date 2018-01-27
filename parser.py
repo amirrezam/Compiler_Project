@@ -69,8 +69,18 @@ def jpf(S, D):
     return "(JPF, {}, {}, )".format(S, D)
 
 
+def andd(S1, S2, D):
+    return "(AND, {}, {}, {})".format(S1, S2, D)
+
+
 def print_assemble(S):
     return "(PRINT, {}, , )".format(S)
+
+
+def exist_var(a):
+    if not ("type" in a):
+        print("Error, Var {} doesn't have type in line {}".format(a["name"], number_of_lines))
+        sys.exit()
 
 
 def handle_action(action):
@@ -87,10 +97,12 @@ def handle_action(action):
     elif action == "RESET_DECLARATION":
         var_declaration = False
     elif action == "PUSH_INT":
-        semantic_stack.append("#{}".format(complete_token[1]))  #(complete_token[1], "int")
+        semantic_stack.append(("#{}".format(complete_token[1]), "int"))  #(complete_token[1], "int")
     elif action == "PUSH_BOOL":
-        semantic_stack.append(complete_token[1])  #(complete_token[1], "bool")
+        semantic_stack.append((complete_token[1], "boolean"))  #(complete_token[1], "bool")
     elif action == "DEFINE_FUNC":
+        type = semantic_stack[-1]
+        semantic_stack.pop()
         ind = complete_token[1]
         semantic_stack.append(ind)
         symbol_tables[table_stack[-1]][ind]["return_address"] = return_address_counter
@@ -99,58 +111,88 @@ def handle_action(action):
         return_value_counter += 4
         symbol_tables[table_stack[-1]][ind]["prog_start"] = len(PB)
         symbol_tables[table_stack[-1]][ind]["param_start"] = var_counter
+        symbol_tables[table_stack[-1]][ind]["type"] = type
     elif action == "END_FUNC":
         ind = semantic_stack[-1]
         symbol_tables[table_stack[-1]][ind]["param_end"] = var_counter
+    elif action == "ADD_TYPE":
+        type = complete_token[1]
+        semantic_stack.append(type)
     elif action == "ID_ADDRESS":
         ind = complete_token[1]
+        type = semantic_stack[-1]
+        semantic_stack.pop()
         symbol_tables[table_stack[-1]][ind]["address"] = var_counter
+        symbol_tables[table_stack[-1]][ind]["type"] = type
         var_counter += 4
     elif action == "JMP_RETURN":
         ind = semantic_stack[-2]
-        val = semantic_stack[-1]
+        val = semantic_stack[-1][0]
+        type = semantic_stack[-1][1]
         semantic_stack.pop()
         semantic_stack.pop()
+        exist_var(symbol_tables[table_stack[-1]][ind])
+        func_type = symbol_tables[table_stack[-1]][ind]["type"]
+        if type != func_type:
+            print("Error Type Checking in return value function {}".format(symbol_tables[table_stack[-1]][ind]["name"]))
+            sys.exit()
         PB.append(assign(val, symbol_tables[table_stack[-1]][ind]["return_value"]))
         PB.append(jp("@{}".format(symbol_tables[table_stack[-1]][ind]["return_address"])))
     elif action == "JMP_FIRST":
         PB[0] = jp("{}".format(len(PB)))
     elif action == "ADD":
         t = get_temp()
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != type_b:
+            print("Error Type Checking in ADD in line {}".format(prev_number_line))
+            sys.exit()
         PB.append(add(a, b, t))
         semantic_stack.pop()
         semantic_stack.pop()
-        semantic_stack.append(t)
+        semantic_stack.append((t, type_a))
     elif action == "MULT":
         t = get_temp()
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != type_b:
+            print("Error Type Checking in MULT in line {}".format(prev_number_line))
+            sys.exit()
         PB.append(mult(a, b, t))
         semantic_stack.pop()
         semantic_stack.pop()
-        semantic_stack.append(t)
+        semantic_stack.append((t, type_a))
     elif action == "SUB":
         t = get_temp()
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != type_b:
+            print("Error Type Checking in SUB in line {}".format(prev_number_line))
+            sys.exit()
         PB.append(sub(b, a, t))
         semantic_stack.pop()
         semantic_stack.pop()
-        semantic_stack.append(t)
+        semantic_stack.append((t,type_a))
     elif action == "PID_CLASS":
         t = complete_token
         ind = t[1]
         if ind != -1:
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+            exist_var(symbol_tables[table_stack[-1]][ind])
+            semantic_stack.append((symbol_tables[table_stack[-1]][ind]["address"], symbol_tables[table_stack[-1]][ind]["type"]))
     elif action == "PID_METHOD":
         t = complete_token
         ind = t[1]
+        exist_var(symbol_tables[t[2]][ind])
         if "address" in symbol_tables[t[2]][ind]:
-            semantic_stack.append(symbol_tables[t[2]][ind]["address"])
+            semantic_stack.append((symbol_tables[t[2]][ind]["address"], symbol_tables[t[2]][ind]["type"]))
         else:
-            semantic_stack.append(symbol_tables[t[2]][ind]["return_value"])
+            semantic_stack.append((symbol_tables[t[2]][ind]["return_value"], symbol_tables[t[2]][ind]["type"]))
             semantic_stack.append(symbol_tables[t[2]][ind]["prog_start"])
             semantic_stack.append(symbol_tables[t[2]][ind]["return_address"])
             semantic_stack.append(symbol_tables[t[2]][ind]["param_end"])
@@ -167,22 +209,45 @@ def handle_action(action):
 
     elif action == "EQUALITY":
         t = get_temp()
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != type_b:
+            print("Error Type Checking Equality in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         PB.append(equality(a, b, t))
-        semantic_stack.append(t)
+        semantic_stack.append((t,"boolean"))
 
     elif action == "LESS_THAN":
         t = get_temp()
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != type_b:
+            print("Error Type Checking Less than in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         PB.append(less(b, a, t))
-        semantic_stack.append(t)
+        semantic_stack.append((t,"boolean"))
 
+    elif action == "AND_TERM":
+        t = get_temp()
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
+        if type_a != "boolean" or type_b != "boolean":
+            print("Error Type Checking and in line {}, expressions must be boolean".format(prev_number_line))
+            sys.exit()
+        semantic_stack.pop()
+        semantic_stack.pop()
+        PB.append(andd(a, b, t))
+        semantic_stack.append((t,"boolean"))
     elif action == "LABEL":
         semantic_stack.append(len(PB))
 
@@ -192,9 +257,13 @@ def handle_action(action):
 
     elif action == "WHILE":
         ind = semantic_stack[-1]
-        exp = semantic_stack[-2]
+        exp = semantic_stack[-2][0]
+        type_exp = semantic_stack[-2][1]
         st = semantic_stack[-3]
         l = len(PB)
+        if type_exp != "boolean":
+            print("Error Type Checking, Expression must be boolean in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         semantic_stack.pop()
@@ -203,8 +272,12 @@ def handle_action(action):
 
     elif action == "JPF_SAVE":
         ind = semantic_stack[-1]
-        exp = semantic_stack[-2]
+        exp = semantic_stack[-2][0]
+        type_exp = semantic_stack[-2][1]
         l = len(PB)
+        if type_exp != "boolean":
+            print("Error Type Checking, Expression must be boolean in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         PB[ind] = jpf(exp, l + 1)
@@ -220,26 +293,45 @@ def handle_action(action):
     elif action == "PID":
         t = complete_token
         ind = t[1]
-        semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+        exist_var(symbol_tables[table_stack[-1]][ind])
+        semantic_stack.append((symbol_tables[table_stack[-1]][ind]["address"], symbol_tables[table_stack[-1]][ind]["type"]))
 
     elif action == "ASSIGN":
-        s = semantic_stack[-1]
-        d = semantic_stack[-2]
+        s = semantic_stack[-1][0]
+        d = semantic_stack[-2][0]
+        type_s = semantic_stack[-1][1]
+        type_d = semantic_stack[-2][1]
+        if type_s != type_d:
+            print("Error Type Checking in assignment in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         PB.append(assign(s, d))
 
     elif action == "PRINT":
-        exp = semantic_stack[-1]
+        exp = semantic_stack[-1][0]
+        type_exp = semantic_stack[-1][1]
+        if type_exp != "int":
+            print("Error in line {}, Only print integer value".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         PB.append(print_assemble(exp))
 
     elif action == "FOR":
-        a = semantic_stack[-1]
-        b = semantic_stack[-2]
+        a = semantic_stack[-1][0]
+        b = semantic_stack[-2][0]
+        type_a = semantic_stack[-1][1]
+        type_b = semantic_stack[-2][1]
         ind = semantic_stack[-3]
         label = semantic_stack[-5]
-        exp = semantic_stack[-4]
+        exp = semantic_stack[-4][0]
+        type_exp = semantic_stack[-4][1]
+        if type_exp != "boolean":
+            print("Error Type Checking, Expression must be boolean in line {}".format(prev_number_line))
+            sys.exit()
+        if type_a != type_b:
+            print("Error Type Checking in assignment in line {}".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
         semantic_stack.pop()
@@ -251,15 +343,21 @@ def handle_action(action):
         PB[ind] = jpf(exp, l)
 
     elif action == "POP_PARAMS":
+        current_param = semantic_stack[-1]
+        end_param = semantic_stack[-2]
+        if current_param != end_param:
+            print("Error in call function in line {}, # of arguments don't equal # of parameters".format(prev_number_line))
+            sys.exit()
         semantic_stack.pop()
         semantic_stack.pop()
 
     elif action == "ASSIGN_ARG":
-        exp = semantic_stack[-1]
+        exp = semantic_stack[-1][0]
         current_param = semantic_stack[-2]
         param_end = semantic_stack[-3]
         if current_param == param_end:
-            print("Error in call function, arguments more than parameters")
+            print("Error in call function in line {}, # of arguments don't equal # of parameters".format(prev_number_line))
+            sys.exit()
         else:
             PB.append(assign(exp, current_param))
             semantic_stack[-2] = current_param + 4
@@ -281,8 +379,6 @@ def get_token():
         token = n_token[0]
     else:
         token = n_token[1]
-    if token == "$":
-        return "EOF"
     return token
 
 
@@ -331,3 +427,5 @@ while True:
 
 for i in range(len(PB)):
     print("{}\t".format(i), PB[i])
+
+# print(semantic_stack)
