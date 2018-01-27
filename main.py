@@ -27,6 +27,8 @@ current_index = 0
 
 var_declaration = False
 
+number_of_lines = 0
+
 
 def get_program():
     global prog
@@ -44,9 +46,20 @@ def exist(arr, s, e, l):
             return i
     return -1
 
+def eliminate_space():
+    global current_index
+    while prog[current_index].isspace():
+        current_index += 1
+
 
 def search(state, start_index):
-    global current_index
+    global current_index, number_of_lines
+
+    if state == 0:
+        while prog[current_index].isspace():
+            start_index += 1
+            current_index += 1
+
     if (current_index + 18) < len(prog) and prog[current_index: current_index + 18] == "System.out.println":
         current_index += 18
         return ["keyword", "System.out.println"]
@@ -78,6 +91,8 @@ def search(state, start_index):
             return search(10, start_index)
         elif current_char == "&":
             return search(13, start_index)
+        elif current_char == "/":
+            return search(14, start_index)
         else:
             return ["error", start_index]
 
@@ -170,6 +185,31 @@ def search(state, start_index):
             return ["OP", "&&"]
         else:
             return ["error", start_index]
+    elif state == 14:
+        if current_char == "/":
+            return search(15, start_index)
+        if current_char == "*":
+            return search(17, start_index)
+        else:
+            return ["error", start_index]
+    elif state == 15:
+        if current_char != "\n":
+            return search(15, start_index)
+        else:
+            number_of_lines += 1
+            return search(0, current_index)
+    elif state == 17:
+        if current_char == "*":
+            return search(18, start_index)
+        else:
+            return search(17, start_index)
+
+    elif state == 18:
+        if current_char == "/":
+            return search(0, current_index)
+        else:
+            return search(17, current_index)
+
 
 
 def next_token(isdeclaration):
@@ -184,12 +224,11 @@ def next_token(isdeclaration):
 
     start_index = current_index
 
-    # while search(0, start_index)[0] == "error":
-    #     print("Error in index ", start_index, prog[start_index], ord(' '), " ",  ord(prog[start_index]), " ", prog[start_index].isspace())
-    #     start_index += 1
-    #     current_index = start_index
-    # current_index = start_index
-
     token = search(0, start_index)
+    while token[0] == "error":
+        print("Error in index ", start_index, prog[start_index:current_index])
+        current_index -= 1
+        start_index = current_index
+        token = search(0, start_index)
     return (token, start_index)
 

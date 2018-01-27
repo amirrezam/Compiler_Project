@@ -2,6 +2,7 @@
 
 from parse_table import parse_table, grammer, map_terminals, terminals, follows
 from main import next_token, keywords, get_program, current_index, symbol_tables, table_stack, scope_stack, extend_relation
+import sys
 
 var_declaration = False
 
@@ -139,20 +140,19 @@ def handle_action(action):
     elif action == "PID_CLASS":
         t = complete_token
         ind = t[1]
-        print(t, "inja salam")
         if ind != -1:
             semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
     elif action == "PID_METHOD":
         t = complete_token
         ind = t[1]
-        if "address" in symbol_tables[table_stack[-1]][ind]:
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
+        if "address" in symbol_tables[t[2]][ind]:
+            semantic_stack.append(symbol_tables[t[2]][ind]["address"])
         else:
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_value"])
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["prog_start"])
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["return_address"])
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["param_end"])
-            semantic_stack.append(symbol_tables[table_stack[-1]][ind]["param_start"])
+            semantic_stack.append(symbol_tables[t[2]][ind]["return_value"])
+            semantic_stack.append(symbol_tables[t[2]][ind]["prog_start"])
+            semantic_stack.append(symbol_tables[t[2]][ind]["return_address"])
+            semantic_stack.append(symbol_tables[t[2]][ind]["param_end"])
+            semantic_stack.append(symbol_tables[t[2]][ind]["param_start"])
 
     elif action == "JMP_RETURN_ADDRESS":
         l = len(PB)
@@ -270,7 +270,7 @@ def get_token():
     global start_index
     global complete_token
     t = next_token(var_declaration)
-    print(t, " token \n\n", "symbol_table: ", symbol_tables, "\n\n", "table_stack: ", table_stack, "\n\n", "scope_stack:", scope_stack, "\n\n", "extend_relation: ", extend_relation, "\n\n\n\n\n\n")
+    # print(t, " token \n\n", "symbol_table: ", symbol_tables, "\n\n", "table_stack: ", table_stack, "\n\n", "scope_stack:", scope_stack, "\n\n", "extend_relation: ", extend_relation, "\n\n\n\n\n\n")
     start_index = t[1]
     n_token = t[0]
     complete_token = n_token
@@ -288,12 +288,11 @@ token = get_token()
 
 while True:
     if len(parse_stack) == 0:
-        print("Empty Parser Stack")
+        print("Empty Parser Stack in Panic")
+        sys.exit()
     top = parse_stack[-1]
 
     print("\n\n\n token : ", token, "\t\t top: ", top)
-    # print(parse_stack, " PARSE STACK")
-    # print(PB)
 
     if top.find("#") != -1:
         handle_action(top[1:])
