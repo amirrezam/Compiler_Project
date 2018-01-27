@@ -1,4 +1,5 @@
 # in the name of god
+import sys
 
 keywords = [
     "public", "class", "static", "void", "main", "extends", "return",
@@ -27,7 +28,7 @@ current_index = 0
 
 var_declaration = False
 
-number_of_lines = 0
+number_of_lines = 1
 
 
 def get_program():
@@ -47,8 +48,10 @@ def exist(arr, s, e, l):
     return -1
 
 def eliminate_space():
-    global current_index
+    global current_index, number_of_lines
     while prog[current_index].isspace():
+        if prog[current_index] == "\n":
+            number_of_lines += 1
         current_index += 1
 
 
@@ -57,6 +60,8 @@ def search(state, start_index):
 
     if state == 0:
         while prog[current_index].isspace():
+            if prog[current_index] == "\n":
+                number_of_lines += 1
             start_index += 1
             current_index += 1
 
@@ -109,17 +114,25 @@ def search(state, start_index):
             if head_table == "package":
                 # redefinition error TODO
                 if len(extend_stack) == 0:
-                    symbol_tables[lexeme] = []
-                    extend_stack.append(lexeme)
+                    if lexeme in symbol_tables:
+                        print("Redefinition class {}".format(lexeme))
+                        sys.exit()
+                    else:
+                        symbol_tables[lexeme] = []
+                        extend_stack.append(lexeme)
                 else:
-                    extend_relation[extend_stack[-1]] = lexeme
+                    if lexeme in symbol_tables:
+                        extend_relation[extend_stack[-1]] = lexeme
+                    else:
+                        print("Class {} don't implemented".format(lexeme))
+                        sys.exit()
                 return ["identifier", -1, -1]
             elif var_declaration:
                 st = scope_stack[-1]
                 en = len(symbol_tables[table_stack[-1]])
                 index = exist(symbol_tables[table_stack[-1]], st, en, lexeme)
                 if index != -1:
-                    print("Redefinition Error ", lexeme, " ", symbol_tables[table_stack[-1]])
+                    print("Redefinition Error ", lexeme)
                     return ["identifier", index, table_stack[-1]]
                 else:
                     symbol_tables[table_stack[-1]].append({"name": lexeme})
@@ -140,7 +153,6 @@ def search(state, start_index):
                     return ["identifier", ind1, table_stack[-1]]
                 current_table = table_stack[-1]
                 while current_table in extend_relation:
-                    # print(current_table, " inja \n", extend_relation)
                     current_table = extend_relation[current_table]
                     ind = exist(symbol_tables[current_table], 0, len(symbol_tables[current_table]), lexeme)
                     if ind != -1:
@@ -184,6 +196,7 @@ def search(state, start_index):
         if current_char == "&":
             return ["OP", "&&"]
         else:
+            current_index -= 1
             return ["error", start_index]
     elif state == 14:
         if current_char == "/":
@@ -191,6 +204,7 @@ def search(state, start_index):
         if current_char == "*":
             return search(17, start_index)
         else:
+            current_index -= 1
             return ["error", start_index]
     elif state == 15:
         if current_char != "\n":
@@ -202,33 +216,37 @@ def search(state, start_index):
         if current_char == "*":
             return search(18, start_index)
         else:
+            if current_char == "\n":
+                number_of_lines += 1
             return search(17, start_index)
 
     elif state == 18:
         if current_char == "/":
             return search(0, current_index)
         else:
+            if current_char == "\n":
+                number_of_lines += 1
             return search(17, current_index)
 
 
-
 def next_token(isdeclaration):
-    global current_index, var_declaration
+    global current_index, var_declaration, number_of_lines
     var_declaration = isdeclaration
 
     if current_index >= len(prog):
-        return [-1, -1] # End of program
+        return [-1, -1]
 
     while prog[current_index].isspace():
+        if prog[current_index] == "\n":
+            number_of_lines += 1
         current_index += 1
 
     start_index = current_index
 
     token = search(0, start_index)
     while token[0] == "error":
-        print("Error in index ", start_index, prog[start_index:current_index])
-        current_index -= 1
+        print("Error in line {}".format(number_of_lines))
         start_index = current_index
         token = search(0, start_index)
-    return (token, start_index)
+    return (token, start_index, number_of_lines)
 
