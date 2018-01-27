@@ -1,7 +1,7 @@
 # LL1 parser
 
 from parse_table import parse_table, grammer, map_terminals, terminals, follows
-from main import next_token, keywords, get_program, current_index, symbol_tables, table_stack, scope_stack
+from main import next_token, keywords, get_program, current_index, symbol_tables, table_stack, scope_stack, extend_relation
 
 var_declaration = False
 
@@ -139,6 +139,7 @@ def handle_action(action):
     elif action == "PID_CLASS":
         t = complete_token
         ind = t[1]
+        print(t, "inja salam")
         if ind != -1:
             semantic_stack.append(symbol_tables[table_stack[-1]][ind]["address"])
     elif action == "PID_METHOD":
@@ -159,7 +160,7 @@ def handle_action(action):
         P_S = semantic_stack[-2]
         semantic_stack.pop()
         semantic_stack.pop()
-        PB.append(assign("{}".format(l + 2), R_A))
+        PB.append(assign("#{}".format(l + 2), R_A))
         PB.append(jp(P_S))
 
     elif action == "EQUALITY":
@@ -269,7 +270,7 @@ def get_token():
     global start_index
     global complete_token
     t = next_token(var_declaration)
-    print(t, " token \n\n", "symbol_table: ", symbol_tables, "\n\n", "table_stack: ", table_stack, "\n\n", "scope_stack:", scope_stack, "\n\n")
+    print(t, " token \n\n", "symbol_table: ", symbol_tables, "\n\n", "table_stack: ", table_stack, "\n\n", "scope_stack:", scope_stack, "\n\n", "extend_relation: ", extend_relation, "\n\n\n\n\n\n")
     start_index = t[1]
     n_token = t[0]
     complete_token = n_token
@@ -287,13 +288,12 @@ token = get_token()
 
 while True:
     if len(parse_stack) == 0:
-        print("BE FANA")
-        # TODO
+        print("Empty Parser Stack")
     top = parse_stack[-1]
 
     print("\n\n\n token : ", token, "\t\t top: ", top)
-    print(parse_stack, " PARSE STACK")
-    print(PB)
+    # print(parse_stack, " PARSE STACK")
+    # print(PB)
 
     if top.find("#") != -1:
         handle_action(top[1:])
@@ -302,7 +302,7 @@ while True:
     if top in terminals:
         if top == token:
             if token == "EOF":
-                print("ACCEPT")
+                # print("ACCEPT")
                 break
             parse_stack.pop()
             token = get_token()
@@ -328,4 +328,4 @@ while True:
                     token = get_token()
 
 for i in range(len(PB)):
-    print("{}: ".format(i), PB[i])
+    print("{}\t".format(i), PB[i])
