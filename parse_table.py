@@ -30,7 +30,7 @@ grammer = [
     ("Statement","while #LABEL ( GenExpression ) #SAVE Statement #WHILE"), # 28
     ("Statement","for ( #PID Identifier = Integer #ASSIGN ; #LABEL RelTerm #SAVE ; #PID Identifier += Integer ) Statement #FOR"), # 29
     ("Statement","#PID Identifier = GenExpression #ASSIGN ;"), # 30
-    ("Statement","System.out.println ( GenExpression #PRINT ) ;"), # 31
+    ("Statement","System . out . println ( GenExpression #PRINT ) ;"), # 31
     ("GenExpression","Expression I"), # 32
     ("I",""), # 33
     ("I","G H"), # 34
@@ -315,7 +315,9 @@ map_terminals = {
     "void": "v",
     "while": "w",
     "extends": "x",
-    "System.out.println": "y",
+    "System": "y",
+    "out": "z",
+    "println": "u",
     "{": "{",
     "}": "}",
     "(": "(",

@@ -3,7 +3,7 @@ import sys
 
 keywords = [
     "public", "class", "static", "void", "main", "extends", "return",
-    "if", "else", "while", "for", "true", "false", "boolean", "int", "EOF"
+    "if", "else", "while", "for", "true", "false", "boolean", "int", "EOF", "System", "out", "println"
 ]
 
 one_char_token = [
@@ -63,9 +63,9 @@ def search(state, start_index):
             start_index += 1
             current_index += 1
 
-    if (current_index + 18) < len(prog) and prog[current_index: current_index + 18] == "System.out.println":
-        current_index += 18
-        return ["keyword", "System.out.println"]
+    # if (current_index + 18) < len(prog) and prog[current_index: current_index + 18] == "System.out.println":
+    #     current_index += 18
+    #     return ["keyword", "System.out.println"]
 
     current_char = prog[current_index]
     current_index += 1
